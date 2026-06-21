@@ -55,9 +55,22 @@
 | 🔒 **治理预留** | SSO、审计、环境隔离、写操作分级、限流——接口预留，UI 已上线 |
 | 🚀 **单 Jar / 单镜像部署** | `mvn package` 把 Vue 前端打入 Spring Boot Jar；`docker compose up` 即开即用 |
 
-## 🐳 Docker 一键启动 
+## 🐳 Docker 一键启动
 
-只要装了 Docker，**一行命令**即可拉起完整服务（Web 控制台 + MCP 端点），**无需在宿主机安装 JDK / Maven / Node**：
+### 方式 1：拉预构建镜像（真·一行命令）
+
+任何装了 Docker 的机器：
+
+```bash
+docker run -d --name mcpg -p 8088:8088 ghcr.io/jialiuyang/mcp-api-gateway:latest
+```
+
+启动 <10s，浏览器打开 <http://localhost:8088/> 即可看到控制台。**无需 git clone / JDK / Maven / Node**。
+
+> 想持久化 H2 数据库与日志：再加 `-v <宿主目录>:/app/data`。
+> 镜像每次推送到 `main` 由 GitHub Actions 自动构建；可用 tag：`latest` / `sha-<7位>` / `main`。
+
+### 方式 2：从源码构建（适合二次开发）
 
 ```bash
 git clone https://github.com/jialiuyang/MCP-Api-Gateway.git
@@ -65,9 +78,11 @@ cd MCP-Api-Gateway
 docker compose -f docker-compose.demo.yml up --build -d
 ```
 
-首次构建约 3–5 分钟（含 Maven 依赖 + Node 20 + Vue 打包）；之后启动 ≤10s。
+首次构建约 3–5 分钟（Maven 依赖 + Node 20 + Vue 打包）；之后启动 ≤10s。
+数据（H2 文件、日志）会落到本地 `./data/` 目录，重启后保留。
+停止：`docker compose -f docker-compose.demo.yml down`。
 
-启动后访问：
+### 启动后入口
 
 | 入口 | URL |
 |------|-----|
@@ -76,9 +91,6 @@ docker compose -f docker-compose.demo.yml up --build -d
 | 健康检查 | <http://localhost:8088/actuator/health> |
 | MCP 接入端点（推荐） | `http://localhost:8088/mcp` |
 | MCP 接入端点（SSE 旧客户端） | `http://localhost:8088/mcp/sse` |
-
-停止：`docker compose -f docker-compose.demo.yml down`。
-数据（H2 文件、日志）会落到本地 `./data/` 目录，重启后保留。
 
 > 想跑生产体积更小的镜像？仓库根目录还提供单阶段 `Dockerfile`（要求宿主机先 `mvn package`），适合放进自家 CI/CD 流水线。
 
