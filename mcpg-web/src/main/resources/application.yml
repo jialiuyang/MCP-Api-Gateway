@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: mcpg
+  profiles:
+    active: ${MCPG_PROFILE:dev}
+
+server:
+  port: ${MCPG_PORT:8088}
+  compression:
+    enabled: true
+  error:
+    include-message: always
+    include-stacktrace: never
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,scheduledtasks
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+
+logging:
+  level:
+    root: INFO
+    com.mcpg: DEBUG
+
+app:
+  version: @project.version@
+
+# Scheduler tuning for the B3 milestone.
+# - swagger-refresh re-pulls every service's OpenAPI document daily at 03:00.
+# - registry-discovery polls every enabled registry on a fixed delay so newly
+#   registered services are picked up without restarting the gateway.
+mcpg:
+  scheduler:
+    swagger-refresh:
+      enabled: true
+      cron: 0 0 3 * * *
+    registry-discovery:
+      enabled: true
+      # First run 30 seconds after startup, then every 5 minutes.
+      initial-delay-ms: 30000
+      fixed-delay-ms: 300000

@@ -1,0 +1,30 @@
+:root {
+  --mcpg-bg: #f5f7fa;
+  --mcpg-side: #1f2937;
+  --mcpg-side-active: #111827;
+  --mcpg-accent: #409eff;
+  --mcpg-text: #303133;
+  --mcpg-text-light: #909399;
+  --mcpg-border: #e4e7ed;
+}
+
+* { box-sizing: border-box; }
+
+.mcpg-page {
+  padding: 24px;
+  background: var(--mcpg-bg);
+  min-height: 100%;
+}
+
+.mcpg-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--mcpg-text);
+  margin-bottom: 12px;
+}
+
+.mcpg-empty {
+  color: var(--mcpg-text-light);
+  padding: 48px 0;
+  text-align: center;
+}

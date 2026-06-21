@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mcpg</groupId>
+        <artifactId>mcp-gateway-enterprise</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mcpg-server</artifactId>
+    <name>MCPG :: MCP Server</name>
+    <description>
+        MCP Server implementation: meta tools (list_services / search_api /
+        get_api_schema / call_api), tool registry, and HTTP/SSE transport
+        endpoint exposed to AI clients like Cursor.
+
+        Note: the MCP Java SDK dependency is intentionally NOT declared at
+        the B1 (skeleton) stage. It is added in B2 together with the actual
+        tool implementations so that B1 builds remain stable even if the SDK
+        coordinate changes.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.mcpg</groupId>
+            <artifactId>mcpg-core</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

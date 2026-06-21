@@ -1,0 +1,38 @@
+version: "3.9"
+
+# One-click demo environment.
+#
+# What this brings up:
+#   - mcpg-web on :8080 (the MCP Gateway itself)
+#
+# What it deliberately does NOT bring up:
+#   - Nacos / Eureka: assumed to be installed by the user locally so we can
+#     exercise the real adapter against a real registry.
+#   - Sample backend service: created in B5 once the parser and meta tools
+#     can prove the full happy path end-to-end.
+#
+# Usage:
+#   docker compose -f docker-compose.demo.yml up
+#
+# After it is running:
+#   open http://localhost:8080/
+
+services:
+  mcpg-web:
+    image: ${MCPG_IMAGE:-mcpg/mcp-gateway-enterprise:latest}
+    container_name: mcpg-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8088:8088"
+    environment:
+      MCPG_PROFILE: dev
+      MCPG_PORT: "8088"
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5

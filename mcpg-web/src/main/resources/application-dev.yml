@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/mcpg-dev;DB_CLOSE_DELAY=-1;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+    show-sql: false
+
+# B5: pre-populate three demo services + tools on first boot so the console
+# is never empty out of the box. Idempotent - only runs when the services
+# table is empty. Set to false in air-gapped environments or once you have
+# real services connected.
+mcpg:
+  demo:
+    seed: true
