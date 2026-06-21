@@ -54,17 +54,6 @@ Platform operators only need to:
 | 🔒 **Governance hooks** | SSO, audit, environment isolation, write-op tiers, rate limit — interfaces reserved, UI live |
 | 🚀 **Single jar / single image** | `mvn package` bundles the Vue console into the Spring Boot jar; `docker compose up` and you are done |
 
-## Current status
-
-The project is delivered in five milestones:
-
-| Milestone | Scope | Status |
-|-----------|-------|--------|
-| **B1** | Project skeleton + build pipeline | ✅ Done |
-| **B2** | OpenAPI parsing + four meta tools + Cursor integration | ✅ Done |
-| **B3** | Registry adapters + auto-discovery + daily refresh | ✅ Done |
-| **B4** | Exposure strategies (META / HYBRID / DIRECT_ALL) + Promote | ✅ Done |
-| **B5** | High-fidelity UI (audit / policies / health / settings) + demo seed + docs | ✅ Done |
 
 ## 🐳 Docker one-click 
 
