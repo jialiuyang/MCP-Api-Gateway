@@ -182,13 +182,7 @@ See [docs/design-decisions.md](./docs/design-decisions.md). Topics include:
 ## Contributing
 
 Issues and PRs are very welcome — please read [CONTRIBUTING.md](./CONTRIBUTING.md) first.
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=jialiuyang/MCP-Api-Gateway&type=Date)](https://star-history.com/#jialiuyang/MCP-Api-Gateway&Date)
-
----
-
+ 
 If this project saves you time, please consider giving it a ⭐ — it helps others discover the project.
 Got questions or ideas? Open an [Issue](https://github.com/jialiuyang/MCP-Api-Gateway/issues/new) or join the [Discussions](https://github.com/jialiuyang/MCP-Api-Gateway/discussions).
 
