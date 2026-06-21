@@ -4,22 +4,10 @@
   <a href="https://github.com/jialiuyang/MCP-Api-Gateway/actions/workflows/build.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/jialiuyang/MCP-Api-Gateway/build.yml?branch=main&label=build&logo=github" alt="Build">
   </a>
-  <a href="https://github.com/jialiuyang/MCP-Api-Gateway/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/jialiuyang/MCP-Api-Gateway?color=blue" alt="License">
-  </a>
-  <a href="https://github.com/jialiuyang/MCP-Api-Gateway/commits/main">
-    <img src="https://img.shields.io/github/last-commit/jialiuyang/MCP-Api-Gateway" alt="Last commit">
-  </a>
   <img src="https://img.shields.io/github/languages/code-size/jialiuyang/MCP-Api-Gateway" alt="Code size">
 </p>
 
 <p align="center">
-  <a href="https://github.com/jialiuyang/MCP-Api-Gateway/stargazers">
-    <img src="https://img.shields.io/github/stars/jialiuyang/MCP-Api-Gateway?style=social" alt="Stars">
-  </a>
-  <a href="https://github.com/jialiuyang/MCP-Api-Gateway/network/members">
-    <img src="https://img.shields.io/github/forks/jialiuyang/MCP-Api-Gateway?style=social" alt="Forks">
-  </a>
   <a href="https://github.com/jialiuyang/MCP-Api-Gateway/issues">
     <img src="https://img.shields.io/github/issues/jialiuyang/MCP-Api-Gateway" alt="Issues">
   </a>
