@@ -66,7 +66,7 @@ The project is delivered in five milestones:
 | **B4** | Exposure strategies (META / HYBRID / DIRECT_ALL) + Promote | ✅ Done |
 | **B5** | High-fidelity UI (audit / policies / health / settings) + demo seed + docs | ✅ Done |
 
-## 🐳 Docker one-click (recommended)
+## 🐳 Docker one-click 
 
 If you have Docker, a **single command** brings the whole gateway up (web console + MCP endpoint), **no JDK / Maven / Node required on the host**:
 
@@ -140,19 +140,6 @@ A 5-minute walkthrough (Petstore-based demo, prompts and screenshots) is in
 - **Registries**: `nacos-client`, `eureka-client`
 - **Frontend**: Vue 3 + Vite + TypeScript + Element Plus + Pinia
 - **Build**: Maven multi-module + frontend-maven-plugin (one-click build)
-
-## Module layout
-
-```
-mcp-gateway-enterprise/
-├── mcpg-core/             # SPI interfaces and domain models (no Spring)
-├── mcpg-parser/           # OpenAPI parser implementations
-├── mcpg-registry/         # Registry adapters (incl. four stubs)
-├── mcpg-server/           # MCP server: meta tools, HTTP/SSE endpoint
-├── mcpg-web/              # Spring Boot main app, REST API, JPA, final jar
-├── mcpg-stdio-bridge/     # Stdio bridge CLI for stdio-only MCP clients
-└── mcpg-ui/               # Vue 3 console; bundled into the jar by Maven
-```
 
 See [ARCHITECTURE.md](./ARCHITECTURE.md) for the full architecture (4 Mermaid diagrams);
 visual standalone versions: [docs/architecture.html](./docs/architecture.html) (dark hero) and
