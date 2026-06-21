@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: ${MCPG_DB_URL:jdbc:mysql://localhost:3306/mcpg?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
+    username: ${MCPG_DB_USER:mcpg}
+    password: ${MCPG_DB_PASSWORD:mcpg}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL8Dialect
+
+# B5: production deploys should never auto-seed demo data.
+mcpg:
+  demo:
+    seed: false

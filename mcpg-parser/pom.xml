@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mcpg</groupId>
+        <artifactId>mcp-gateway-enterprise</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mcpg-parser</artifactId>
+    <name>MCPG :: Parser</name>
+    <description>
+        OpenAPI / Swagger parsing implementations. Hosts the concrete
+        OpenApiSourceParser beans that translate vendor documents into the
+        neutral ParsedSpec model defined in mcpg-core.
+    </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.mcpg</groupId>
+            <artifactId>mcpg-core</artifactId>
+        </dependency>
+
+        <!-- Spring is used here only for bean registration; parser logic itself is plain Java. -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.swagger.parser.v3</groupId>
+            <artifactId>swagger-parser</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+    </dependencies>
+</project>

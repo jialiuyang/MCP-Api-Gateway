@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.mcpg</groupId>
+        <artifactId>mcp-gateway-enterprise</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>mcpg-stdio-bridge</artifactId>
+    <name>MCPG :: Stdio Bridge</name>
+    <description>
+        Minimal CLI that exposes the gateway over MCP stdio transport by
+        relaying JSON-RPC frames to/from the main HTTP/SSE endpoint. Useful
+        when an MCP client only supports stdio (older Cursor releases or
+        sandboxed environments).
+
+        B1 stage: skeleton main method only. Fat-jar assembly is deferred to
+        B2 when the bridge has real bytes to ship; for now the regular jar
+        with Main-Class in MANIFEST is sufficient because the bridge has no
+        runtime dependencies beyond Jackson and SLF4J (provided by the JDK
+        class path during local dev).
+    </description>
+
+    <properties>
+        <skip.frontend>true</skip.frontend>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>mcpg-stdio-bridge</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.mcpg.bridge.StdioBridgeMain</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

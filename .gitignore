@@ -1,0 +1,62 @@
+# Maven
+target/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.project
+.classpath
+.settings/
+.factorypath
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Spring Boot
+*.log
+*.log.*
+logs/
+spring.log
+application-local.yml
+application-local.properties
+
+# Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm
+.eslintcache
+.vite/
+.pnpm-store/
+
+# frontend-maven-plugin downloads node here
+.node/
+
+# Local config / secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Generated
+generated-sources/
+generated-resources/
+
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
+
+# Temp
+tmp/
+*.tmp
