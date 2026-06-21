@@ -55,18 +55,6 @@
 | 🔒 **治理预留** | SSO、审计、环境隔离、写操作分级、限流——接口预留，UI 已上线 |
 | 🚀 **单 Jar / 单镜像部署** | `mvn package` 把 Vue 前端打入 Spring Boot Jar；`docker compose up` 即开即用 |
 
-## 当前进展
-
-本项目按 5 个里程碑逐步交付：
-
-| 里程碑 | 内容 | 状态 |
-|--------|------|------|
-| **B1** | 工程骨架 + 构建链路 | ✅ 已完成 |
-| **B2** | OpenAPI 解析 + 4 个元工具 + Cursor 接入 | ✅ 已完成 |
-| **B3** | 注册中心适配 + 自动发现 + 每日刷新 | ✅ 已完成 |
-| **B4** | 暴露策略（META / HYBRID / DIRECT_ALL）+ Promote 机制 | ✅ 已完成 |
-| **B5** | 高保真 UI（审计 / 策略 / 健康 / 设置）+ Demo 种子 + 完整文档 | ✅ 已完成 |
-
 ## 🐳 Docker 一键启动（推荐）
 
 只要装了 Docker，**一行命令**即可拉起完整服务（Web 控制台 + MCP 端点），**无需在宿主机安装 JDK / Maven / Node**：
@@ -140,19 +128,6 @@ java -jar mcpg-web/target/mcpg-web.jar
 - **注册中心**：`nacos-client`、`eureka-client`
 - **前端**：Vue 3 + Vite + TypeScript + Element Plus + Pinia
 - **构建**：Maven 多模块 + frontend-maven-plugin（前端一键打包）
-
-## 工程结构
-
-```
-mcp-gateway-enterprise/
-├── mcpg-core/             # SPI 接口、领域模型（无 Spring 依赖）
-├── mcpg-parser/           # OpenAPI 解析实现
-├── mcpg-registry/         # 注册中心适配实现（含 4 个占位空壳）
-├── mcpg-server/           # MCP Server 实现（元工具、HTTP/SSE 端点）
-├── mcpg-web/              # Spring Boot 主应用、REST API、JPA、最终打包
-├── mcpg-stdio-bridge/     # Stdio 桥接 CLI（用于只支持 stdio 的 MCP 客户端）
-└── mcpg-ui/               # Vue 3 前端，由 Maven 自动打包并内嵌到 jar
-```
 
 详细架构图请见 [ARCHITECTURE.md](./ARCHITECTURE.md)（含 4 张 Mermaid 视图）；
 高清版可视化版本：[docs/architecture.html](./docs/architecture.html)（深色封面）与 [docs/flow.html](./docs/flow.html)（用户调用链路简版）。
