@@ -1,0 +1,55 @@
+# syntax=docker/dockerfile:1.7
+#
+# Multi-stage build: produces a runnable image directly from source.
+# Use this when you do NOT want to run `mvn package` on the host first.
+#
+# Build:
+#   docker build -f Dockerfile.full -t mcpg/mcp-gateway-enterprise:dev .
+# Or via compose:
+#   docker compose -f docker-compose.demo.yml up --build
+
+# ---------- Stage 1: build backend + Vue frontend in one go ----------
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /workspace
+
+# Pre-copy pom files for better Docker layer caching.
+COPY pom.xml ./
+COPY mcpg-core/pom.xml           mcpg-core/
+COPY mcpg-parser/pom.xml         mcpg-parser/
+COPY mcpg-registry/pom.xml       mcpg-registry/
+COPY mcpg-server/pom.xml         mcpg-server/
+COPY mcpg-web/pom.xml            mcpg-web/
+COPY mcpg-stdio-bridge/pom.xml   mcpg-stdio-bridge/
+COPY mcpg-ui/pom.xml             mcpg-ui/
+
+# Warm up Maven cache. Allowed to fail on partial layouts.
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -ntp -q dependency:go-offline -DskipTests || true
+
+# Now the full source.
+COPY . .
+
+# frontend-maven-plugin downloads Node 20 into mcpg-ui/.node here.
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -ntp clean package -DskipTests
+
+# ---------- Stage 2: minimal runtime ----------
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+
+RUN mkdir -p /app/data && \
+    apt-get update && apt-get install -y --no-install-recommends wget && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY --from=build /workspace/mcpg-web/target/mcpg-web.jar /app/mcpg-web.jar
+
+EXPOSE 8088
+
+ENV MCPG_PROFILE=dev \
+    MCPG_PORT=8088 \
+    JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=70.0"
+
+HEALTHCHECK --interval=30s --timeout=5s --retries=5 \
+    CMD wget -qO- "http://localhost:${MCPG_PORT}/actuator/health" || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/mcpg-web.jar"]
