@@ -181,12 +181,6 @@ mcp-gateway-enterprise/
 
 欢迎提 Issue / PR！请先阅读 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=jialiuyang/MCP-Api-Gateway&type=Date)](https://star-history.com/#jialiuyang/MCP-Api-Gateway&Date)
-
----
-
 如果这个项目对你有帮助，欢迎点个 ⭐ Star 让更多人看到。
 有问题或建议？提个 [Issue](https://github.com/jialiuyang/MCP-Api-Gateway/issues/new) 或参与 [Discussions](https://github.com/jialiuyang/MCP-Api-Gateway/discussions)。
 
