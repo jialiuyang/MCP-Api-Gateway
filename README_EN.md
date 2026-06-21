@@ -55,9 +55,22 @@ Platform operators only need to:
 | 🚀 **Single jar / single image** | `mvn package` bundles the Vue console into the Spring Boot jar; `docker compose up` and you are done |
 
 
-## 🐳 Docker one-click 
+## 🐳 Docker one-click
 
-If you have Docker, a **single command** brings the whole gateway up (web console + MCP endpoint), **no JDK / Maven / Node required on the host**:
+### Option 1: Pull the prebuilt image (true one-liner)
+
+Any machine with Docker installed:
+
+```bash
+docker run -d --name mcpg -p 8088:8088 ghcr.io/jialiuyang/mcp-api-gateway:latest
+```
+
+Boots in <10s. Open <http://localhost:8088/> in your browser. **No git clone / JDK / Maven / Node required.**
+
+> Want to persist the H2 DB and logs? Add `-v <host-path>:/app/data`.
+> The image is rebuilt by GitHub Actions on every push to `main`. Available tags: `latest` / `sha-<7>` / `main`.
+
+### Option 2: Build from source (for development)
 
 ```bash
 git clone https://github.com/jialiuyang/MCP-Api-Gateway.git
@@ -66,8 +79,10 @@ docker compose -f docker-compose.demo.yml up --build -d
 ```
 
 First build: ~3–5 min (Maven deps + Node 20 + Vue bundle). Subsequent starts ≤10s.
+H2 files and logs land in `./data/` and survive restarts.
+Stop: `docker compose -f docker-compose.demo.yml down`.
 
-Once running:
+### Endpoints once running
 
 | Endpoint | URL |
 |------|-----|
@@ -76,9 +91,6 @@ Once running:
 | Health | <http://localhost:8088/actuator/health> |
 | MCP endpoint (recommended) | `http://localhost:8088/mcp` |
 | MCP endpoint (legacy SSE clients) | `http://localhost:8088/mcp/sse` |
-
-Stop: `docker compose -f docker-compose.demo.yml down`.
-H2 files and logs are persisted to local `./data/` and survive restarts.
 
 > Need a slimmer production image? A single-stage `Dockerfile` is also provided; it expects you to have already run `mvn package` on the host, which fits nicely into your own CI pipeline.
 
