@@ -55,7 +55,7 @@
 | 🔒 **治理预留** | SSO、审计、环境隔离、写操作分级、限流——接口预留，UI 已上线 |
 | 🚀 **单 Jar / 单镜像部署** | `mvn package` 把 Vue 前端打入 Spring Boot Jar；`docker compose up` 即开即用 |
 
-## 🐳 Docker 一键启动（推荐）
+## 🐳 Docker 一键启动 
 
 只要装了 Docker，**一行命令**即可拉起完整服务（Web 控制台 + MCP 端点），**无需在宿主机安装 JDK / Maven / Node**：
 
