@@ -3,19 +3,21 @@ version: "3.9"
 # One-click demo environment.
 #
 # What this brings up:
-#   - mcpg-web on :8080 (the MCP Gateway itself)
+#   - mcpg-web on :8088 (the MCP Gateway itself)
 #
 # What it deliberately does NOT bring up:
 #   - Nacos / Eureka: assumed to be installed by the user locally so we can
 #     exercise the real adapter against a real registry.
-#   - Sample backend service: created in B5 once the parser and meta tools
-#     can prove the full happy path end-to-end.
+#   - Sample backend service: see docs/demo-cursor.md for a Petstore walk-through.
 #
-# Usage:
-#   docker compose -f docker-compose.demo.yml up
+# Usage (from source, multi-stage build, no Maven required on host):
+#   docker compose -f docker-compose.demo.yml up --build -d
+#
+# Usage (using a prebuilt jar produced by `mvn package` on the host):
+#   docker compose -f docker-compose.demo.yml -f docker-compose.prebuilt.yml up -d
 #
 # After it is running:
-#   open http://localhost:8080/
+#   open http://localhost:8088/
 
 services:
   mcpg-web:
@@ -23,14 +25,16 @@ services:
     container_name: mcpg-web
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.full
     ports:
       - "8088:8088"
     environment:
-      MCPG_PROFILE: dev
+      MCPG_PROFILE: ${MCPG_PROFILE:-dev}
       MCPG_PORT: "8088"
+      JAVA_OPTS: ${JAVA_OPTS:--XX:+UseG1GC -XX:MaxRAMPercentage=70.0}
     volumes:
       - ./data:/app/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8088/actuator/health"]
       interval: 30s
