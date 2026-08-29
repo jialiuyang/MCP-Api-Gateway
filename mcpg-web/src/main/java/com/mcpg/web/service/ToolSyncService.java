@@ -66,16 +66,31 @@ public class ToolSyncService {
         for (ParsedOperation op : operations) {
             String toolName = ToolNaming.toolName(service.getName(), op.getOperationId());
             ToolEntity entity = existing.remove(toolName);
+            if (entity == null) {
+                // Same spec pass can collapse two operations onto one name
+                // (duplicate operationId or truncation). Reuse the row we
+                // already prepared instead of inserting a second identity.
+                entity = next.get(toolName);
+            }
+            if (entity == null) {
+                // uk_tool_name is global. A leftover row from a previous
+                // service (or a first import that only persisted one of the
+                // colliding names) must be updated in place.
+                entity = toolRepository.findByToolName(toolName).orElse(null);
+                if (entity != null) {
+                    entity.setServiceId(service.getId());
+                }
+            }
             boolean isNew = entity == null;
             if (isNew) {
                 entity = new ToolEntity();
                 entity.setServiceId(service.getId());
                 entity.setToolName(toolName);
                 added++;
-            } else {
+            } else if (!next.containsKey(toolName)) {
                 updated++;
             }
-            entity.setOperationId(op.getOperationId());
+            entity.setOperationId(op.getOperationId() == null ? "" : op.getOperationId());
             entity.setHttpMethod(op.getHttpMethod());
             entity.setPath(op.getPath());
             entity.setSummary(op.getSummary());
@@ -108,7 +123,9 @@ public class ToolSyncService {
     }
 
     private String stringify(JsonNode node) {
-        if (node == null) return null;
+        if (node == null) {
+            return "{\"type\":\"object\",\"properties\":{}}";
+        }
         try {
             return MAPPER.writeValueAsString(node);
         } catch (Exception e) {

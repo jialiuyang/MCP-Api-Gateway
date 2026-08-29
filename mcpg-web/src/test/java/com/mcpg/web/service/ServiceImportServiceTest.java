@@ -131,4 +131,56 @@ class ServiceImportServiceTest {
         assertThat(second.getUpdated()).isEqualTo(3);
         assertThat(second.getRemoved()).isZero();
     }
+
+    /**
+     * Two operations can collapse to the same {@code tool_name} (duplicate
+     * operationId, or truncation). The first import inserts one row; the
+     * second pass must update that row instead of inserting again, or
+     * {@code uk_tool_name} blows up and the Nacos re-discover UI hangs on
+     * fallback spec URLs.
+     */
+    @Test
+    void importFromUrl_secondPass_reuses_row_when_operationIds_collide() {
+        String spec = """
+                {
+                  "openapi": "3.0.1",
+                  "info": { "title": "Dup Ops", "version": "1.0.0" },
+                  "servers": [ { "url": "https://dup.example.com" } ],
+                  "paths": {
+                    "/a": {
+                      "get": {
+                        "operationId": "listItems",
+                        "summary": "List A",
+                        "responses": { "200": { "description": "ok" } }
+                      }
+                    },
+                    "/b": {
+                      "get": {
+                        "operationId": "listItems",
+                        "summary": "List B",
+                        "responses": { "200": { "description": "ok" } }
+                      }
+                    }
+                  }
+                }
+                """;
+        when(fetcher.fetch(anyString())).thenReturn(
+                new SwaggerFetcher.Result(spec, "https://dup.example.com/openapi.json"));
+
+        ImportSwaggerRequest req = new ImportSwaggerRequest();
+        req.setName("dup-ops");
+        req.setUrl("https://dup.example.com/openapi.json");
+        req.setEnvironment(Environment.DEV);
+
+        importService.importFromUrl(req);
+        ImportResultDto second = importService.importFromUrl(req);
+
+        assertThat(second.getToolCount()).isEqualTo(1);
+        List<ToolEntity> tools = toolRepository.findByServiceId(
+                serviceRepository.findByNameAndEnvironment("dup-ops", Environment.DEV)
+                        .orElseThrow()
+                        .getId());
+        assertThat(tools).hasSize(1);
+        assertThat(tools.get(0).getToolName()).isEqualTo("dup_ops__listItems");
+    }
 }

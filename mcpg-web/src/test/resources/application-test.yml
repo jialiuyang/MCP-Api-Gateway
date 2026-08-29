@@ -19,3 +19,7 @@ logging:
   level:
     root: WARN
     com.mcpg: INFO
+
+mcpg:
+  demo:
+    seed: false
