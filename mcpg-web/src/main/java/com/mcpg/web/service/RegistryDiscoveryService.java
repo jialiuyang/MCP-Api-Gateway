@@ -10,6 +10,7 @@ import com.mcpg.web.entity.ServiceEntity;
 import com.mcpg.web.repository.RegistryRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -158,6 +159,11 @@ public class RegistryDiscoveryService {
                 lastError = e;
                 log.debug("Spec candidate {} failed for service {}: {}",
                         specUrl, svc.getName(), e.getMessage());
+                if (isPersistenceFailure(e)) {
+                    // Re-import unique-key failures are not "wrong swagger URL".
+                    // Retrying /v2/api-docs and friends only stalls the UI.
+                    break;
+                }
             }
         }
 
@@ -240,5 +246,18 @@ public class RegistryDiscoveryService {
 
     private String stripTrailingSlash(String s) {
         return (s != null && s.endsWith("/")) ? s.substring(0, s.length() - 1) : s;
+    }
+
+    /**
+     * Persistence errors mean the spec was already parsed and the database
+     * rejected the write. Further swagger suffixes cannot fix that.
+     */
+    private static boolean isPersistenceFailure(Throwable error) {
+        for (Throwable t = error; t != null; t = t.getCause()) {
+            if (t instanceof DataAccessException) {
+                return true;
+            }
+        }
+        return false;
     }
 }

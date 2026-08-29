@@ -14,6 +14,7 @@ import com.mcpg.web.repository.RegistryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -135,6 +136,31 @@ class RegistryDiscoveryServiceTest {
         assertThat(result.getImported()).isEqualTo(1);
         assertThat(result.getItems().get(0).getStatus()).isEqualTo("IMPORTED");
         assertThat(result.getItems().get(0).getBaseUrl()).contains("/v3/api-docs.yaml");
+    }
+
+    @Test
+    void doesNotProbeFurtherSpecUrlsAfterPersistenceFailure() {
+        RegistryEntity registry = newRegistry();
+        adapters = new RegistryAdapterRegistry(List.of(new TestAdapter(List.of(
+                DiscoveredService.builder()
+                        .name("order-service")
+                        .baseUrls(List.of("http://order:8080"))
+                        .sourceType("nacos")
+                        .environment(Environment.DEV)
+                        .build()
+        ))));
+
+        when(importService.importFromUrl(any()))
+                .thenThrow(new DataIntegrityViolationException("uk_tool_name"));
+
+        RegistryDiscoveryService discovery = new RegistryDiscoveryService(
+                adapters, importService, registryRepository);
+        DiscoveryResultDto result = discovery.discover(registry);
+
+        assertThat(result.getImported()).isZero();
+        assertThat(result.getSkipped()).isEqualTo(1);
+        assertThat(result.getItems().get(0).getMessage()).contains("uk_tool_name");
+        verify(importService, times(1)).importFromUrl(any());
     }
 
     @Test
