@@ -9,7 +9,7 @@ import org.springframework.test.context.ActiveProfiles;
  * with the {@code dev} profile (H2 in-memory database).
  */
 @SpringBootTest
-@ActiveProfiles("dev")
+@ActiveProfiles("test")
 class McpgApplicationTests {
 
     @Test

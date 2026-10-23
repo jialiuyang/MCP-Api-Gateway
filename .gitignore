@@ -48,6 +48,12 @@ dist-ssr/
 *.pem
 *.key
 
+# Local H2 / runtime data (may contain credentials)
+data/
+**/data/*.mv.db
+**/data/*.trace.db
+**/data/api-token.txt
+
 # Generated
 generated-sources/
 generated-resources/

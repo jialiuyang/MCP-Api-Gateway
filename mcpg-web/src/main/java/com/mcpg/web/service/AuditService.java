@@ -3,6 +3,7 @@ package com.mcpg.web.service;
 import com.mcpg.web.dto.AuditEventDto;
 import com.mcpg.web.dto.AuditPageDto;
 import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -12,26 +13,21 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Synthesizes an in-memory audit feed so the UI has something believable to
- * render before the real audit pipeline lands.
+ * In-memory audit feed.
  *
- * <p>The events are generated once at startup with a fixed PRNG seed so the
- * output is deterministic between restarts (helps screenshots and demos).
- * Filters and paging are applied on every read.</p>
- *
- * <p>Replacing this service with a JPA-backed implementation is a drop-in:
- * the controller only depends on {@link #page(String, String, int, int)}.</p>
+ * <p>Real mutating operations call {@link #record}; optional demo samples are
+ * seeded only when {@code mcpg.demo.seed=true} so the UI is never empty in
+ * demos, but production profiles see only genuine events.</p>
  */
 @Service
 public class AuditService {
 
-    /** Fixed seed keeps the dataset stable across restarts. */
     private static final long SEED = 20260621L;
-
-    /** How many events to materialize at startup. */
-    private static final int SAMPLE_SIZE = 64;
+    private static final int SAMPLE_SIZE = 32;
 
     private static final String[] ACTIONS = {
             "service.import", "service.refresh", "service.delete",
@@ -58,12 +54,20 @@ public class AuditService {
             "MCPG-Stdio-Bridge/1.0"
     };
 
-    private final List<AuditEventDto> events = new ArrayList<>();
+    private final List<AuditEventDto> events = new CopyOnWriteArrayList<>();
+    private final AtomicLong idSeq = new AtomicLong(1_000_000);
+
+    @Value("${mcpg.demo.seed:false}")
+    private boolean demoSeed;
 
     @PostConstruct
     void generate() {
+        if (!demoSeed) {
+            return;
+        }
         Random rng = new Random(SEED);
         Instant base = Instant.now().minus(2, ChronoUnit.DAYS);
+        List<AuditEventDto> samples = new ArrayList<>();
         for (int i = 0; i < SAMPLE_SIZE; i++) {
             String action = ACTIONS[rng.nextInt(ACTIONS.length)];
             String actor = ACTORS[rng.nextInt(ACTORS.length)];
@@ -81,7 +85,7 @@ public class AuditService {
             String ua = USER_AGENTS[rng.nextInt(USER_AGENTS.length)];
             String detail = describe(action, resourceId, failed, rng);
             Instant ts = base.plusSeconds(i * 1700L + rng.nextInt(900));
-            events.add(new AuditEventDto(
+            samples.add(new AuditEventDto(
                     SAMPLE_SIZE - i,
                     ts,
                     actor,
@@ -95,18 +99,30 @@ public class AuditService {
                     ua,
                     detail));
         }
-        events.sort(Comparator.comparing(AuditEventDto::timestamp).reversed());
+        samples.sort(Comparator.comparing(AuditEventDto::timestamp).reversed());
+        events.addAll(samples);
     }
 
-    /**
-     * Filter + paginate the synthetic event list. Both filters are optional;
-     * {@code null} or blank means no constraint.
-     *
-     * @param outcome    {@code SUCCESS}, {@code FAILURE} or {@code null}
-     * @param keyword    matched against action / actor / resourceId (case-insensitive)
-     * @param page       0-based page index
-     * @param size       page size (capped at 200 to keep responses light)
-     */
+    public void record(String actor, String action, String resourceType, String resourceId,
+                       String outcome, Integer httpStatus, Long durationMs, String detail) {
+        events.add(0, new AuditEventDto(
+                idSeq.incrementAndGet(),
+                Instant.now(),
+                actor == null ? "system" : actor,
+                action,
+                resourceType,
+                resourceId,
+                outcome == null ? "SUCCESS" : outcome,
+                httpStatus,
+                durationMs,
+                null,
+                null,
+                detail));
+        while (events.size() > 2000) {
+            events.remove(events.size() - 1);
+        }
+    }
+
     public AuditPageDto page(String outcome, String keyword, int page, int size) {
         String kw = keyword == null ? "" : keyword.trim().toLowerCase(Locale.ROOT);
         String oc = outcome == null ? "" : outcome.trim().toUpperCase(Locale.ROOT);

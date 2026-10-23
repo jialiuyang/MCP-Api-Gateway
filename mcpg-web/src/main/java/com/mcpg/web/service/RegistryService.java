@@ -9,6 +9,7 @@ import com.mcpg.web.dto.TestConnectionResult;
 import com.mcpg.web.dto.UpdateRegistryRequest;
 import com.mcpg.web.entity.RegistryEntity;
 import com.mcpg.web.repository.RegistryRepository;
+import com.mcpg.web.security.CredentialCipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -36,10 +37,17 @@ public class RegistryService {
 
     private final RegistryRepository repository;
     private final RegistryAdapterRegistry adapters;
+    private final CredentialCipher credentialCipher;
+    private final AuditService auditService;
 
-    public RegistryService(RegistryRepository repository, RegistryAdapterRegistry adapters) {
+    public RegistryService(RegistryRepository repository,
+                           RegistryAdapterRegistry adapters,
+                           CredentialCipher credentialCipher,
+                           AuditService auditService) {
         this.repository = repository;
         this.adapters = adapters;
+        this.credentialCipher = credentialCipher;
+        this.auditService = auditService;
     }
 
     public List<RegistryDto> list() {
@@ -66,7 +74,7 @@ public class RegistryService {
         e.setType(req.getType().toLowerCase());
         e.setEndpoint(req.getEndpoint());
         e.setUsername(blankToNull(req.getUsername()));
-        e.setPassword(blankToNull(req.getPassword()));
+        e.setPassword(credentialCipher.encrypt(blankToNull(req.getPassword())));
         if (req.getEnvironment() != null) e.setEnvironment(req.getEnvironment());
         e.setNamespace(blankToNull(req.getNamespace()));
         e.setGroupName(blankToNull(req.getGroupName()));
@@ -75,6 +83,8 @@ public class RegistryService {
 
         e = repository.save(e);
         log.info("Registry '{}' ({}) created at {}", e.getName(), e.getType(), e.getEndpoint());
+        auditService.record("mcpg-operator", "registry.create", "registry", e.getName(),
+                "SUCCESS", 201, null, "Created " + e.getType() + " @ " + e.getEndpoint());
         return RegistryDto.from(e);
     }
 
@@ -86,7 +96,9 @@ public class RegistryService {
         if (req.getUsername() != null) e.setUsername(blankToNull(req.getUsername()));
         // Special password semantics: null = keep, empty = clear, otherwise replace.
         if (req.getPassword() != null) {
-            e.setPassword(req.getPassword().isEmpty() ? null : req.getPassword());
+            e.setPassword(req.getPassword().isEmpty()
+                    ? null
+                    : credentialCipher.encrypt(req.getPassword()));
         }
         if (req.getEnvironment() != null) e.setEnvironment(req.getEnvironment());
         if (req.getNamespace() != null) e.setNamespace(blankToNull(req.getNamespace()));
@@ -96,14 +108,19 @@ public class RegistryService {
 
         e = repository.save(e);
         log.info("Registry '{}' updated", e.getName());
+        auditService.record("mcpg-operator", "registry.update", "registry", e.getName(),
+                "SUCCESS", 200, null, "Updated");
         return RegistryDto.from(e);
     }
 
     @Transactional
     public void delete(Long id) {
         RegistryEntity e = require(id);
+        String name = e.getName();
         repository.delete(e);
-        log.info("Registry '{}' deleted", e.getName());
+        log.info("Registry '{}' deleted", name);
+        auditService.record("mcpg-operator", "registry.delete", "registry", name,
+                "SUCCESS", 204, null, "Deleted");
     }
 
     public TestConnectionResult test(Long id) {
@@ -179,7 +196,7 @@ public class RegistryService {
                 registry.getType(),
                 registry.getEndpoint(),
                 registry.getUsername(),
-                registry.getPassword(),
+                credentialCipher.decrypt(registry.getPassword()),
                 extra);
     }
 

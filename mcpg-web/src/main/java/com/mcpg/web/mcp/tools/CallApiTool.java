@@ -2,6 +2,7 @@ package com.mcpg.web.mcp.tools;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.mcpg.core.exception.McpgException;
 import com.mcpg.core.model.ToolInvocation;
 import com.mcpg.core.model.ToolInvocationResult;
 import com.mcpg.web.entity.ServiceEntity;
@@ -9,19 +10,18 @@ import com.mcpg.web.entity.ToolEntity;
 import com.mcpg.web.invoker.HttpToolInvoker;
 import com.mcpg.web.repository.ServiceRepository;
 import com.mcpg.web.repository.ToolRepository;
+import com.mcpg.web.security.GovernanceGuard;
+import com.mcpg.web.service.AuditService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
 
 /**
- * Meta tool that actually executes a backend operation.
- *
- * <p>This is the only tool that performs a side effect against a backend
- * service; therefore it is also the natural anchoring point for the future
- * governance hooks (audit logging in B5, write-tier confirmation in B4).
- * For B2 it simply forwards via the {@link HttpToolInvoker}.</p>
+ * Meta tool that executes a backend operation under governance guards.
  */
 @Component
 public class CallApiTool extends AbstractMetaTool {
@@ -31,13 +31,19 @@ public class CallApiTool extends AbstractMetaTool {
     private final ToolRepository toolRepository;
     private final ServiceRepository serviceRepository;
     private final HttpToolInvoker invoker;
+    private final GovernanceGuard governanceGuard;
+    private final AuditService auditService;
 
     public CallApiTool(ToolRepository toolRepository,
                         ServiceRepository serviceRepository,
-                        HttpToolInvoker invoker) {
+                        HttpToolInvoker invoker,
+                        GovernanceGuard governanceGuard,
+                        AuditService auditService) {
         this.toolRepository = toolRepository;
         this.serviceRepository = serviceRepository;
         this.invoker = invoker;
+        this.governanceGuard = governanceGuard;
+        this.auditService = auditService;
     }
 
     @Override
@@ -80,6 +86,15 @@ public class CallApiTool extends AbstractMetaTool {
         }
         ServiceEntity service = serviceOpt.get();
 
+        try {
+            governanceGuard.assertInvocationAllowed(
+                    tool.getHttpMethod(), service.getEnvironment(), currentActor());
+        } catch (McpgException e) {
+            auditService.record(currentActor(), "mcp.call_api", "tool", toolName,
+                    "FAILURE", 403, null, e.getMessage());
+            return textResult(e.getMessage(), true);
+        }
+
         JsonNode forwardArgs = arguments == null ? null : arguments.get("arguments");
         if (forwardArgs == null || forwardArgs.isNull()) {
             forwardArgs = MAPPER.createObjectNode();
@@ -96,6 +111,11 @@ public class CallApiTool extends AbstractMetaTool {
         log.info("call_api → tool={} method={} path={}",
                 tool.getToolName(), tool.getHttpMethod(), tool.getPath());
         ToolInvocationResult result = invoker.invoke(invocation);
+        auditService.record(currentActor(), "mcp.call_api", "tool", toolName,
+                result.isSuccess() ? "SUCCESS" : "FAILURE",
+                result.getStatusCode(),
+                result.getElapsedMillis(),
+                result.isSuccess() ? "OK" : result.getErrorMessage());
         return textResult(render(tool, result), !result.isSuccess());
     }
 
@@ -112,5 +132,13 @@ public class CallApiTool extends AbstractMetaTool {
             sb.append("**response:**\n\n```\n").append(result.getBody()).append("\n```");
         }
         return sb.toString();
+    }
+
+    private static String currentActor() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated() && auth.getName() != null) {
+            return auth.getName();
+        }
+        return "mcp-client";
     }
 }
