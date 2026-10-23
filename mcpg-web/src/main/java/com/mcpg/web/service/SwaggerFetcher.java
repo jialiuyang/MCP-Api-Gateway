@@ -1,64 +1,65 @@
 package com.mcpg.web.service;
 
 import com.mcpg.core.exception.McpgException;
+import com.mcpg.web.security.UrlSafety;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatusCode;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.time.Duration;
 import java.util.List;
 
 /**
- * Downloads a remote OpenAPI / Swagger document.
- *
- * <p>Wraps a configured {@link RestClient} so:</p>
- * <ul>
- *   <li>Timeouts are bounded (15 seconds connect + read).</li>
- *   <li>Friendly errors surface the URL that failed - vital because the
- *       most common operational mistake is a typo in the swagger path.</li>
- *   <li>If the URL is a Swagger UI HTML page rather than the spec itself,
- *       try the well-known sibling paths ({@code /v3/api-docs} for
- *       Springdoc, {@code /openapi.json} for FastAPI).</li>
- * </ul>
+ * Downloads a remote OpenAPI / Swagger document with SSRF guards and timeouts.
  */
 @Component
 public class SwaggerFetcher {
 
     private static final Logger log = LoggerFactory.getLogger(SwaggerFetcher.class);
 
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration READ_TIMEOUT = Duration.ofSeconds(15);
+
     private static final List<String> WELL_KNOWN_SUFFIXES = List.of(
-            "/v3/api-docs",       // Springdoc
+            "/v3/api-docs",
             "/v3/api-docs.yaml",
-            "/v2/api-docs",       // Springfox (deprecated but still common)
-            "/openapi.json",      // FastAPI default
+            "/v2/api-docs",
+            "/openapi.json",
             "/openapi.yaml",
             "/swagger.json"
     );
 
     private final RestClient client;
+    private final UrlSafety urlSafety;
 
-    public SwaggerFetcher() {
+    public SwaggerFetcher(UrlSafety urlSafety) {
+        this.urlSafety = urlSafety;
+        HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(CONNECT_TIMEOUT)
+                .followRedirects(HttpClient.Redirect.NEVER)
+                .build();
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(httpClient);
+        factory.setReadTimeout(READ_TIMEOUT);
         this.client = RestClient.builder()
+                .requestFactory(factory)
                 .defaultHeader("Accept", "application/json, application/yaml, text/yaml, */*")
                 .build();
     }
 
-    /**
-     * Fetch the raw spec at the given URL. If the body looks like HTML
-     * (Swagger UI page) the fetcher walks well-known sibling paths.
-     */
     public Result fetch(String url) {
         try {
-            URI uri = URI.create(url);
+            URI uri = urlSafety.validateHttpUrl(url);
             log.info("Fetching OpenAPI spec from {}", uri);
             String body = exchange(uri);
             if (looksLikeHtml(body)) {
                 log.info("Response looks like HTML; trying well-known spec paths");
-                String alt = walkWellKnown(uri);
-                if (alt != null) return new Result(alt, uri.toString());
+                Result alt = walkWellKnown(uri);
+                if (alt != null) return alt;
                 throw new McpgException(
                         "URL returned HTML rather than a spec, and no well-known "
                                 + "sibling path produced a parsable document: " + uri);
@@ -72,6 +73,7 @@ public class SwaggerFetcher {
     }
 
     private String exchange(URI uri) {
+        urlSafety.validateHttpUrl(uri.toString());
         return client.get()
                 .uri(uri)
                 .retrieve()
@@ -82,7 +84,7 @@ public class SwaggerFetcher {
                 .body(String.class);
     }
 
-    private String walkWellKnown(URI base) {
+    private Result walkWellKnown(URI base) {
         String origin = base.getScheme() + "://" + base.getAuthority();
         for (String suffix : WELL_KNOWN_SUFFIXES) {
             URI candidate = URI.create(origin + suffix);
@@ -90,7 +92,7 @@ public class SwaggerFetcher {
                 String body = exchange(candidate);
                 if (!looksLikeHtml(body)) {
                     log.info("Found spec at {}", candidate);
-                    return body;
+                    return new Result(body, candidate.toString());
                 }
             } catch (Exception e) {
                 log.debug("Well-known path {} not usable: {}", candidate, e.getMessage());
@@ -106,13 +108,6 @@ public class SwaggerFetcher {
         return lower.startsWith("<!doctype html") || lower.startsWith("<html");
     }
 
-    /**
-     * Bundle of the fetched body and the URL that actually returned it (may
-     * differ from the input URL if a well-known suffix was tried).
-     */
     public record Result(String body, String resolvedUrl) {
-        public Duration estimatedSizeIndicator() {
-            return Duration.ofMillis(body == null ? 0 : body.length());
-        }
     }
 }

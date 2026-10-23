@@ -31,6 +31,10 @@ services:
     environment:
       MCPG_PROFILE: ${MCPG_PROFILE:-dev}
       MCPG_PORT: "8088"
+      MCPG_SECURITY_ENABLED: ${MCPG_SECURITY_ENABLED:-true}
+      MCPG_API_TOKEN: ${MCPG_API_TOKEN:-}
+      MCPG_H2_CONSOLE: "false"
+      MCPG_SSRF_ALLOW_PRIVATE: ${MCPG_SSRF_ALLOW_PRIVATE:-true}
       JAVA_OPTS: ${JAVA_OPTS:--XX:+UseG1GC -XX:MaxRAMPercentage=70.0}
     volumes:
       - ./data:/app/data

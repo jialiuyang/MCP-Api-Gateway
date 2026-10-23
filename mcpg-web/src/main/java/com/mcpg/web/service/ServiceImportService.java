@@ -12,6 +12,7 @@ import com.mcpg.web.event.ToolsChangedEvent;
 import com.mcpg.web.repository.ServiceRepository;
 import com.mcpg.web.repository.ServiceSpecRepository;
 import com.mcpg.web.repository.ToolRepository;
+import com.mcpg.web.security.UrlSafety;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -50,6 +51,8 @@ public class ServiceImportService {
     private final ToolRepository toolRepository;
     private final ToolSyncService toolSyncService;
     private final ApplicationEventPublisher eventPublisher;
+    private final UrlSafety urlSafety;
+    private final AuditService auditService;
 
     public ServiceImportService(SwaggerFetcher fetcher,
                                  ParserRegistry parserRegistry,
@@ -57,7 +60,9 @@ public class ServiceImportService {
                                  ServiceSpecRepository specRepository,
                                  ToolRepository toolRepository,
                                  ToolSyncService toolSyncService,
-                                 ApplicationEventPublisher eventPublisher) {
+                                 ApplicationEventPublisher eventPublisher,
+                                 UrlSafety urlSafety,
+                                 AuditService auditService) {
         this.fetcher = fetcher;
         this.parserRegistry = parserRegistry;
         this.serviceRepository = serviceRepository;
@@ -65,11 +70,17 @@ public class ServiceImportService {
         this.toolRepository = toolRepository;
         this.toolSyncService = toolSyncService;
         this.eventPublisher = eventPublisher;
+        this.urlSafety = urlSafety;
+        this.auditService = auditService;
     }
 
     @Transactional
     public ImportResultDto importFromUrl(ImportSwaggerRequest req) {
         log.info("Importing service '{}' from {}", req.getName(), req.getUrl());
+        urlSafety.validateHttpUrl(req.getUrl());
+        if (req.getBaseUrl() != null && !req.getBaseUrl().isBlank()) {
+            urlSafety.validateHttpUrl(req.getBaseUrl());
+        }
 
         SwaggerFetcher.Result fetched = fetcher.fetch(req.getUrl());
         OpenApiSourceParser parser = parserRegistry.pick(fetched.body());
@@ -94,6 +105,7 @@ public class ServiceImportService {
                             + "doc origin='" + docOrigin + "'). "
                             + "Provide one explicitly via the 'Base URL' field.");
         }
+        urlSafety.validateHttpUrl(effectiveBaseUrl);
 
         ServiceEntity entity = serviceRepository
                 .findByNameAndEnvironment(req.getName(), req.getEnvironment())
@@ -134,6 +146,9 @@ public class ServiceImportService {
 
         log.info("Service '{}' imported: {} added, {} updated, {} removed (total {})",
                 entity.getName(), stats.added(), stats.updated(), stats.removed(), stats.total());
+        auditService.record("mcpg-operator", "service.import", "service", entity.getName(),
+                "SUCCESS", 200, null,
+                "tools=" + stats.total() + " added=" + stats.added() + " removed=" + stats.removed());
 
         if (stats.added() + stats.removed() + stats.updated() > 0) {
             eventPublisher.publishEvent(new ToolsChangedEvent(this, "import:" + entity.getName()));

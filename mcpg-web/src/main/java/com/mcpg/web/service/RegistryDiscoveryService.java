@@ -8,6 +8,7 @@ import com.mcpg.web.dto.ImportSwaggerRequest;
 import com.mcpg.web.entity.RegistryEntity;
 import com.mcpg.web.entity.ServiceEntity;
 import com.mcpg.web.repository.RegistryRepository;
+import com.mcpg.web.security.CredentialCipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
@@ -60,13 +61,16 @@ public class RegistryDiscoveryService {
     private final RegistryAdapterRegistry adapters;
     private final ServiceImportService importService;
     private final RegistryRepository registryRepository;
+    private final CredentialCipher credentialCipher;
 
     public RegistryDiscoveryService(RegistryAdapterRegistry adapters,
                                     ServiceImportService importService,
-                                    RegistryRepository registryRepository) {
+                                    RegistryRepository registryRepository,
+                                    CredentialCipher credentialCipher) {
         this.adapters = adapters;
         this.importService = importService;
         this.registryRepository = registryRepository;
+        this.credentialCipher = credentialCipher;
     }
 
     /**
@@ -210,7 +214,7 @@ public class RegistryDiscoveryService {
                 registry.getType(),
                 registry.getEndpoint(),
                 registry.getUsername(),
-                registry.getPassword(),
+                credentialCipher.decrypt(registry.getPassword()),
                 extra);
     }
 

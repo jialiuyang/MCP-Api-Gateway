@@ -42,6 +42,21 @@ app:
 # - registry-discovery polls every enabled registry on a fixed delay so newly
 #   registered services are picked up without restarting the gateway.
 mcpg:
+  security:
+    # Set MCPG_SECURITY_ENABLED=false only for local unit tests.
+    enabled: ${MCPG_SECURITY_ENABLED:true}
+    # Shared bearer token for /api/** and /mcp/**. When blank, a token is
+    # generated into ./data/api-token.txt on first boot.
+    api-token: ${MCPG_API_TOKEN:}
+    # Optional AES key material for registry password encryption; defaults to
+    # a SHA-256 derivation of the API token.
+    secret-key: ${MCPG_SECRET_KEY:}
+  ssrf:
+    # Allow private/loopback targets for OpenAPI fetch + tool invocation.
+    # Keep false for internet-facing deploys; true is OK for trusted VPC demos.
+    allow-private: ${MCPG_SSRF_ALLOW_PRIVATE:false}
+    # Optional exact / *.domain.com allow-list. Empty = any public host.
+    allowed-hosts: []
   scheduler:
     swagger-refresh:
       enabled: true

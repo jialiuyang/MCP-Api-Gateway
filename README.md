@@ -63,6 +63,9 @@
 
 ```bash
 docker run -d --name mcpg -p 8088:8088 ghcr.io/jialiuyang/mcp-api-gateway:latest
+
+# Recommended: set a token (otherwise one is generated under ./data/api-token.txt)
+# docker run -d --name mcpg -p 8088:8088 -e MCPG_API_TOKEN=your-secret -v mcpg-data:/app/data ghcr.io/jialiuyang/mcp-api-gateway:latest
 ```
 
 启动 <10s，浏览器打开 <http://localhost:8088/> 即可看到控制台。**无需 git clone / JDK / Maven / Node**。

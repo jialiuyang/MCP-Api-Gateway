@@ -60,11 +60,11 @@ public class RegistryEntity {
     private String username;
 
     /**
-     * Plain-text password. Encryption-at-rest is reserved for the governance
-     * milestone (B5); the field is intentionally kept simple here so the
-     * scheduler does not need a key-store on startup.
+     * Registry password stored as {@code enc:v1:...} (AES-GCM) via
+     * {@code CredentialCipher}. Legacy plaintext values are still accepted
+     * on read and re-encrypted on the next write.
      */
-    @Column(length = 256)
+    @Column(length = 512)
     private String password;
 
     /** Logical environment a discovered service is tagged with. */

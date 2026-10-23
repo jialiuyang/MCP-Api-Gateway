@@ -23,3 +23,7 @@ logging:
 mcpg:
   demo:
     seed: false
+  security:
+    enabled: false
+  ssrf:
+    allow-private: true

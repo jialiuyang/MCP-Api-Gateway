@@ -11,6 +11,7 @@ import com.mcpg.web.dto.ServiceDto;
 import com.mcpg.web.entity.RegistryEntity;
 import com.mcpg.web.entity.ServiceEntity;
 import com.mcpg.web.repository.RegistryRepository;
+import com.mcpg.web.security.CredentialCipher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.invocation.InvocationOnMock;
@@ -70,7 +71,7 @@ class RegistryDiscoveryServiceTest {
         when(importService.importFromUrl(any())).thenAnswer(this::okImport);
 
         RegistryDiscoveryService discovery = new RegistryDiscoveryService(
-                adapters, importService, registryRepository);
+                adapters, importService, registryRepository, mock(CredentialCipher.class));
         DiscoveryResultDto result = discovery.discover(registry);
 
         assertThat(result.getDiscovered()).isEqualTo(1);
@@ -98,7 +99,7 @@ class RegistryDiscoveryServiceTest {
                 .thenThrow(new RuntimeException("404 Not Found"));
 
         RegistryDiscoveryService discovery = new RegistryDiscoveryService(
-                adapters, importService, registryRepository);
+                adapters, importService, registryRepository, mock(CredentialCipher.class));
         DiscoveryResultDto result = discovery.discover(registry);
 
         assertThat(result.getImported()).isZero();
@@ -130,7 +131,7 @@ class RegistryDiscoveryServiceTest {
         });
 
         RegistryDiscoveryService discovery = new RegistryDiscoveryService(
-                adapters, importService, registryRepository);
+                adapters, importService, registryRepository, mock(CredentialCipher.class));
         DiscoveryResultDto result = discovery.discover(registry);
 
         assertThat(result.getImported()).isEqualTo(1);
@@ -154,7 +155,7 @@ class RegistryDiscoveryServiceTest {
                 .thenThrow(new DataIntegrityViolationException("uk_tool_name"));
 
         RegistryDiscoveryService discovery = new RegistryDiscoveryService(
-                adapters, importService, registryRepository);
+                adapters, importService, registryRepository, mock(CredentialCipher.class));
         DiscoveryResultDto result = discovery.discover(registry);
 
         assertThat(result.getImported()).isZero();
@@ -169,7 +170,7 @@ class RegistryDiscoveryServiceTest {
         adapters = new RegistryAdapterRegistry(List.of(new TestAdapter(List.of())));
 
         RegistryDiscoveryService discovery = new RegistryDiscoveryService(
-                adapters, importService, registryRepository);
+                adapters, importService, registryRepository, mock(CredentialCipher.class));
         DiscoveryResultDto result = discovery.discover(registry);
 
         assertThat(result.getDiscovered()).isZero();

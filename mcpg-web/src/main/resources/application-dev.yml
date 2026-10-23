@@ -6,7 +6,8 @@ spring:
     password: ""
   h2:
     console:
-      enabled: true
+      # Disabled by default; enable explicitly with MCPG_H2_CONSOLE=true and a token.
+      enabled: ${MCPG_H2_CONSOLE:false}
       path: /h2-console
   jpa:
     hibernate:
@@ -24,3 +25,6 @@ spring:
 mcpg:
   demo:
     seed: true
+  ssrf:
+    # Local demos often import from localhost / Docker network aliases.
+    allow-private: ${MCPG_SSRF_ALLOW_PRIVATE:true}

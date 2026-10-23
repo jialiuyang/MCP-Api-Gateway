@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: ${MCPG_DB_URL:jdbc:mysql://localhost:3306/mcpg?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai}
+    url: ${MCPG_DB_URL:jdbc:mysql://localhost:3306/mcpg?useUnicode=true&characterEncoding=utf8&useSSL=true&requireSSL=true&serverTimezone=Asia/Shanghai}
     username: ${MCPG_DB_USER:mcpg}
     password: ${MCPG_DB_PASSWORD:mcpg}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -18,3 +18,7 @@ spring:
 mcpg:
   demo:
     seed: false
+  security:
+    enabled: true
+  ssrf:
+    allow-private: false

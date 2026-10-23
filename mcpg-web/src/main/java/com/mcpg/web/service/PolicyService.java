@@ -37,24 +37,27 @@ public class PolicyService {
     @PostConstruct
     @Transactional
     public void bootstrap() {
+        // Off by default so demos keep working; when enabled, CallApiTool /
+        // promoted tools actually block POST/PUT/PATCH/DELETE.
         seedIfMissing("write-op.guard", "Write operation guard", "governance",
-                PolicyEntity.Severity.HIGH, true,
+                PolicyEntity.Severity.HIGH, false,
                 """
                 {"requireApproval":true,"approverGroups":["platform-leads"]}
                 """,
-                "Require human approval before any MCP-driven write operation (POST/PUT/PATCH/DELETE).");
+                "When enabled, block MCP-driven write operations (POST/PUT/PATCH/DELETE) until requireApproval is set false or a future approval workflow lands.");
         seedIfMissing("rate-limit.global", "Global rate limit", "traffic",
                 PolicyEntity.Severity.MEDIUM, true,
                 """
                 {"requestsPerMinute":600,"perClient":true}
                 """,
                 "Cap MCP traffic per client to prevent runaway agents from overloading backends.");
+        // Off by default; when enabled, only DEV-tagged services may be invoked.
         seedIfMissing("env.isolation", "Environment isolation", "governance",
-                PolicyEntity.Severity.HIGH, true,
+                PolicyEntity.Severity.HIGH, false,
                 """
                 {"defaultEnv":"DEV","allowProdFor":["platform-leads"]}
                 """,
-                "Restrict production services to allow-listed roles; default new clients to DEV.");
+                "When enabled, block MCP invocation of non-DEV services (SSO role allow-lists land later).");
         seedIfMissing("audit.retention", "Audit log retention", "compliance",
                 PolicyEntity.Severity.LOW, true,
                 """

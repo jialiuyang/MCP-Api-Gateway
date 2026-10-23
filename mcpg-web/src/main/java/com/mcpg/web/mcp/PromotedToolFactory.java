@@ -11,6 +11,10 @@ import com.mcpg.web.entity.ServiceEntity;
 import com.mcpg.web.entity.ToolEntity;
 import com.mcpg.web.invoker.HttpToolInvoker;
 import com.mcpg.web.repository.ServiceRepository;
+import com.mcpg.web.security.GovernanceGuard;
+import com.mcpg.web.service.AuditService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
@@ -28,11 +32,17 @@ public class PromotedToolFactory {
 
     private final ServiceRepository serviceRepository;
     private final HttpToolInvoker httpToolInvoker;
+    private final GovernanceGuard governanceGuard;
+    private final AuditService auditService;
 
     public PromotedToolFactory(ServiceRepository serviceRepository,
-                                HttpToolInvoker httpToolInvoker) {
+                                HttpToolInvoker httpToolInvoker,
+                                GovernanceGuard governanceGuard,
+                                AuditService auditService) {
         this.serviceRepository = serviceRepository;
         this.httpToolInvoker = httpToolInvoker;
+        this.governanceGuard = governanceGuard;
+        this.auditService = auditService;
     }
 
     public McpTool create(ToolEntity entity) {
@@ -81,6 +91,9 @@ public class PromotedToolFactory {
             ServiceEntity service = serviceRepository.findById(entity.getServiceId())
                     .orElseThrow(() -> new McpgException(
                             "Backing service not found for promoted tool " + entity.getToolName()));
+            String actor = currentActor();
+            governanceGuard.assertInvocationAllowed(
+                    entity.getHttpMethod(), service.getEnvironment(), actor);
             ToolInvocation invocation = ToolInvocation.builder()
                     .serviceName(service.getName())
                     .baseUrl(service.getBaseUrl())
@@ -90,7 +103,20 @@ public class PromotedToolFactory {
                     .environment(service.getEnvironment())
                     .build();
             ToolInvocationResult result = httpToolInvoker.invoke(invocation);
+            auditService.record(actor, "mcp.promoted_call", "tool", entity.getToolName(),
+                    result.isSuccess() ? "SUCCESS" : "FAILURE",
+                    result.getStatusCode(),
+                    result.getElapsedMillis(),
+                    result.isSuccess() ? "OK" : result.getErrorMessage());
             return buildResult(result);
+        }
+
+        private static String currentActor() {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated() && auth.getName() != null) {
+                return auth.getName();
+            }
+            return "mcp-client";
         }
 
         private Result buildResult(ToolInvocationResult result) {

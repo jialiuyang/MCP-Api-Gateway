@@ -7,6 +7,7 @@ import com.mcpg.web.dto.ServiceDto;
 import com.mcpg.web.dto.UpdateServiceRequest;
 import com.mcpg.web.entity.ServiceEntity;
 import com.mcpg.web.repository.ServiceRepository;
+import com.mcpg.web.security.UrlSafety;
 import com.mcpg.web.service.ServiceImportService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -20,11 +21,14 @@ public class ServiceController {
 
     private final ServiceRepository serviceRepository;
     private final ServiceImportService serviceImportService;
+    private final UrlSafety urlSafety;
 
     public ServiceController(ServiceRepository serviceRepository,
-                             ServiceImportService serviceImportService) {
+                             ServiceImportService serviceImportService,
+                             UrlSafety urlSafety) {
         this.serviceRepository = serviceRepository;
         this.serviceImportService = serviceImportService;
+        this.urlSafety = urlSafety;
     }
 
     @GetMapping
@@ -56,6 +60,7 @@ public class ServiceController {
             entity.setDisplayName(request.getDisplayName().isBlank() ? null : request.getDisplayName());
         }
         if (request.getBaseUrl() != null && !request.getBaseUrl().isBlank()) {
+            urlSafety.validateHttpUrl(request.getBaseUrl());
             entity.setBaseUrl(request.getBaseUrl());
         }
         if (request.getEnvironment() != null) {
